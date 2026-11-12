@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acompanhamento de serviços – Seridó</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14213d;
+  --muted:#5d6b82;
+  --line:#dde3ea;
+  --bg:#f3f5f8;
+  --paper:#ffffff;
+  --done:#1f7a4d;
+  --sched:#1d5fd1;
+  --appr:#0b7f86;
+  --budget:#a85f00;
+  --wait:#5d6b82;
+  --warr:#7a4bb7;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.45}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #1d5fd1;outline-offset:2px}
+
+.top{background:var(--ink);color:#fff;padding:26px 20px 22px}
+.top h1{font-size:28px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
+.top p{font-size:16px;color:#c3cbda;margin-top:6px}
+.wrap{max-width:860px;margin:0 auto}
+
+section{padding:26px 20px 0}
+h2{font-size:22px;font-weight:800;margin-bottom:4px}
+.sub{font-size:15px;color:var(--muted);margin-bottom:14px}
+
+/* agenda */
+.ag{display:grid;grid-template-columns:76px 1fr;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ag-date{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;background:var(--ink);color:#fff;text-align:center}
+.ag-day{font-size:34px;font-weight:800;line-height:1}
+.ag-mon{font-size:15px;margin-top:2px;color:#c3cbda}
+.ag-body{padding:12px 14px}
+.ag-rel{font-size:15px;font-weight:600;color:var(--sched)}
+.ag-rel.late{color:var(--budget)}
+.ag-title{font-size:18px;font-weight:800;line-height:1.25;margin-top:2px}
+.ag-info{font-size:15.5px;color:var(--muted);margin-top:4px}
+.ag-info b{color:var(--ink);font-weight:600}
+
+.when{font-size:19px;font-weight:800;margin-bottom:6px}
+.when span{font-size:16px;font-weight:600;color:var(--sched);margin-left:6px}
+.amb{font-size:15px;color:var(--muted);margin-bottom:2px}
+.agenda{display:block;border-top:2px solid var(--ink)}
+
+[hidden]{display:none !important}
+
+/* abas */
+.tabs{background:var(--paper);border-bottom:1px solid var(--line)}
+.tabs-in{display:flex}
+.tab{flex:1;min-height:56px;border:0;background:none;font-size:18px;font-weight:800;color:var(--muted);cursor:pointer;border-bottom:4px solid transparent}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* cronograma */
+.g-leg{display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 14px;font-size:15px}
+.g-leg span{display:inline-flex;align-items:center;gap:7px}
+.g-leg i{display:inline-block;width:18px;height:12px;border-radius:6px;background:var(--c)}
+.g-leg i.tr{background:transparent;border:2px dashed var(--c);height:14px}
+.g-leg i.hj{width:0;height:16px;border-radius:0;border-left:2px solid #c2410c;background:none}
+.g-mes-row{display:flex;border-bottom:1px solid var(--line)}
+.g-mes{flex:none;padding:8px 0 6px 8px;font-size:17px;font-weight:800}
+.g-mes small{font-size:13px;font-weight:600;color:var(--muted);margin-left:6px}
+.g-wk{position:relative;height:24px;border-bottom:2px solid var(--ink)}
+.g-wk span{position:absolute;top:3px;font-size:12.5px;color:var(--muted);transform:translateX(-50%)}
+.g-row{padding:14px 0 8px;border-bottom:1px solid var(--line)}
+.g-title{display:block;font-size:17px;font-weight:800;line-height:1.25}
+.g-sub{display:block;font-size:15px;color:var(--muted);margin-top:2px}
+.g-q{color:var(--ink);font-weight:800;margin-right:6px}
+.g-track{position:relative;height:36px;margin-top:8px;border-radius:6px;overflow:hidden}
+.g-track .f{position:absolute;top:0;bottom:0;background:rgba(20,33,61,.05)}
+.g-track .w{position:absolute;top:0;bottom:0;border-left:1px dotted #c9d1dc}
+.g-track .m{position:absolute;top:0;bottom:0;border-left:1px solid #b8c1cf}
+.g-track .h{position:absolute;top:0;bottom:0;border-left:2px solid #c2410c;z-index:2}
+.g-bar{position:absolute;top:6px;height:24px;border-radius:12px;background:var(--c);z-index:1}
+.g-bar.dia{width:20px;margin-left:-10px;border-radius:10px}
+.g-bar.mes{background:rgba(255,255,255,.75);border:2px dashed var(--c)}
+.g-sem{margin-top:26px}
+.g-sem h3{font-size:19px;font-weight:800;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+.g-sem-row{padding:12px 0;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.g-sem-row > div{flex:1 1 240px}
+.pill{display:inline-block;padding:5px 12px;border-radius:14px;font-size:15px;font-weight:600;background:#fdf0d9;color:var(--budget)}
+.pill.ok{background:#e2f3ea;color:var(--done)}
+
+/* barra */
+.bar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line)}
+.bar span{display:block;min-width:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;min-height:44px;border:1.5px solid var(--line);background:var(--paper);border-radius:22px;cursor:pointer;font-size:16px;font-weight:600}
+.chip i{display:block;width:11px;height:11px;border-radius:50%}
+.chip em{font-style:normal;font-weight:800}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* filtros */
+.tools{display:grid;gap:10px;margin-top:14px}
+.tools input,.tools select{width:100%;min-height:48px;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-size:16px}
+@media(min-width:620px){.tools{grid-template-columns:1fr 1fr}}
+
+/* lista */
+.room{margin-top:28px}
+.room h3{font-size:20px;font-weight:800;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+.room h3 small{font-size:15px;font-weight:600;color:var(--muted);margin-left:6px}
+.svc{background:var(--paper);border-left:6px solid var(--c,#999);border-bottom:1px solid var(--line);padding:16px 16px 14px}
+.svc-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-start;justify-content:space-between}
+.svc h4{font-size:19px;font-weight:800;line-height:1.25;flex:1 1 220px}
+.tag{display:inline-block;padding:5px 12px;border-radius:14px;font-size:15px;font-weight:600;color:#fff;background:var(--c,#999);white-space:nowrap}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-top:14px}
+@media(min-width:620px){.facts{grid-template-columns:repeat(4,1fr)}}
+.facts dt{font-size:14px;color:var(--muted)}
+.facts dd{font-size:17px;font-weight:600;line-height:1.3;margin-top:1px}
+.tbd{font-weight:400;font-style:italic;color:var(--budget)}
+.obs{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.obs-t{font-size:14px;color:var(--muted)}
+.obs p{font-size:16px;margin-top:3px}
+details{margin-top:12px}
+summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:16px;font-weight:600;color:var(--sched)}
+details p{font-size:16px;color:var(--ink);margin:2px 0 8px}
+.empty{padding:26px 16px;background:var(--paper);border:1px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted);margin-top:16px}
+
+footer{padding:32px 20px 40px;font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>Acompanhamento de serviços</h1>
+    <p>Casa Seridó. Responsável: Camila Teixeira</p>
+    <p id="atualizado"></p>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Seções do painel">
+  <div class="wrap tabs-in">
+    <button class="tab" role="tab" id="t-servicos" aria-selected="true" aria-controls="p-servicos">Serviços</button>
+    <button class="tab" role="tab" id="t-gantt" aria-selected="false" aria-controls="p-gantt">Cronograma</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section aria-label="Filtros">
+    <div class="tools">
+      <input type="search" id="busca" placeholder="Buscar em todos os serviços" aria-label="Buscar">
+      <select id="amb" aria-label="Filtrar por ambiente"></select>
+    </div>
+  </section>
+
+  <div role="tabpanel" id="p-servicos" aria-labelledby="t-servicos">
+
+    <section aria-labelledby="h-geral">
+      <h2 id="h-geral">Situação dos serviços</h2>
+      <p class="sub" id="total-txt" aria-live="polite"></p>
+      <div class="bar" id="bar" role="img" aria-label="Proporção de serviços por situação"></div>
+      <div class="chips" id="chips"></div>
+    </section>
+
+    <section aria-labelledby="h-agenda">
+      <h2 id="h-agenda">Quem vem e quando</h2>
+      <p class="sub">Serviços com data combinada, da mais próxima para a mais distante.</p>
+      <div class="agenda" id="agenda"></div>
+    </section>
+
+    <section aria-labelledby="h-lista" style="padding-bottom:8px">
+      <h2 id="h-lista">Todos os serviços por ambiente</h2>
+      <div id="lista"></div>
+    </section>
+
+  </div>
+
+  <div role="tabpanel" id="p-gantt" aria-labelledby="t-gantt" hidden>
+    <section aria-labelledby="h-gantt" style="padding-bottom:8px">
+      <h2 id="h-gantt">Cronograma dos serviços</h2>
+      <p class="sub" id="g-count" aria-live="polite"></p>
+      <div class="g-leg" id="g-leg"></div>
+      <div class="gantt" id="gantt"></div>
+      <div class="g-sem" id="g-sem"></div>
+    </section>
+  </div>
+
+</main>
+
+<footer class="wrap">As datas e os valores seguem o que foi combinado com cada empresa e podem mudar. Sempre que mudarem, este painel é atualizado.</footer>
+
+<script>
+var ATUALIZADO = '2026-11-11';
+
+var STATUS = {
+  quote:  {label:'Aguardando sua aprovação', cor:'#b0245a'},
+  done:   {label:'Concluído',             cor:'#1f7a4d'},
+  sched:  {label:'Agendado',              cor:'#1d5fd1'},
+  appr:   {label:'Aprovado, falta a data',cor:'#0b7f86'},
+  budget: {label:'Aguardando orçamento',  cor:'#a85f00'},
+  wait:   {label:'Em andamento com a empresa', cor:'#5d6b82'},
+  warr:   {label:'Garantia, janeiro',     cor:'#7a4bb7'}
+};
+var ORDEM = ['quote','sched','appr','wait','budget','warr','done'];
+
+var servicos = [
+  {id:1, amb:'Suíte Master', nome:'Revisão das portas automáticas', status:'appr',
+   quem:'Doormatic', quando:'Até 20/11 (data exata a confirmar)', iso:'2026-11-20', tipo:'prazo', horario:null,
+   pessoas:'2 funcionários', duracao:'1 dia', valor:'R$ 11.570,00', solic:'Rodrigo',
+   extra:[['Aprovação','Aprovado em 28/09']],
+   notas:['A Doormatic executa em até 10 dias úteis após a aprovação.']},
+
+  {id:2, amb:'Suíte Master', nome:'Vaso sanitário (a tampa não abre completamente)', status:'sched',
+   quem:'Assistência técnica do fabricante', quando:'19/11', iso:'2026-11-19', horario:'manhã, das 8h às 12h',
+   pessoas:'1 técnico', duracao:'Meio dia', valor:null, solic:'Rodrigo', extra:[],
+   notas:['A assistência técnica ficou um tempo sem dar retorno sobre a peça; outros prestadores chegaram a ser consultados.']},
+
+  {id:3, amb:'Suíte Master', nome:'Troca do LED Tensoflex do banho azul', status:'sched',
+   quem:'Adilson (instalador)', quando:'13/11, visita técnica', iso:'2026-11-13', horario:'manhã, das 8h às 12h',
+   pessoas:'1 pessoa', duracao:null, valor:null, solic:'Geyze', extra:[],
+   notas:['O Adilson fará a visita para avaliar o serviço e elaborar o orçamento. Se as condições permitirem, a troca poderá ser resolvida na própria visita, mas isso não é certo e dependerá do que for encontrado no local.','Caso seja necessário um estudo adicional para trocar o LED sem danificar o forro, o resultado será apresentado após a visita.']},
+
+  {id:4, amb:'Escritório / Sala íntima', nome:'Revisão das portas de correr automáticas', status:'wait',
+   quem:null, quando:'Novembro, dia a definir', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:null, solic:'Rodrigo', extra:[],
+   notas:['A ARTCOR não enviou orçamento, então estamos buscando outra empresa.','Enquanto isso, a porta foi travada provisoriamente por Giovanni e Rodrigo.']},
+
+  {id:20, amb:'Escritório / Sala íntima', nome:'Porta acústica de correr sobreposta à existente (ruído de vento)', status:'quote',
+   quem:'Plenna Acústica (consultor Juarez Gomes)', quando:'Entrega de 30 a 40 dias após o sinal', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:'R$ 32.100,00', solic:null, extra:[],
+   notas:['Solução para o ruído de vento da porta do escritório: uma porta acústica de correr, de 4 folhas, instalada por cima da existente. Assim não é preciso quebrar nem retirar a porta atual.',
+          'A proposta da Plenna Acústica (nº 027-26, de 11/11/2026) vale por 10 dias a partir de 11/11.',
+          'Especificação: linha Euro Plenna 3.2 (RW 35), medida L 4.400+80 mm x H 2.640+40 mm, vidros Compactglass 15 mm, pintura eletrostática branco RAL 9003.',
+          'Prazo de entrega: de 30 a 40 dias corridos após o pagamento do sinal e a conferência das medidas. A instalação está inclusa, em horário comercial. O içamento não está incluso.',
+          'Pagamento: à vista, com 50% de sinal e 50% na entrega, e 10% de desconto; ou cartão de crédito em até 6x sem juros, com 5% de desconto. Também aceita PIX, TED, TEF, boleto e débito.',
+          'Garantia: 90 dias para defeitos aparentes ou fora do projeto. 1 ano para motores e partes elétricas, borrachas, escovas, articulações, fechos e roldanas. 5 anos para perfis de alumínio, acabamento e vidro (condensação, microfissuras, rompimento da câmara de ar e infiltração nas bordas). A quebra de vidros após a instalação não é coberta.']},
+
+  {id:5, amb:'Piscina', nome:'Capa automática (lona térmica) para a piscina', status:'wait',
+   quem:'Coberpool (Gabriela Fragozo)', quando:'Final de novembro a dezembro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:'R$ 34.900,00', solic:'Geyze',
+   extra:[['Aprovação','Orçamento aprovado']],
+   notas:['Capa automática de rolo externo, em perfil de PVC rígido (branco gelo ou cinza claro), medindo 1,20 x 21,67 m, com instalação prevista na face de 1,20 m. Proposta da Coberpool nº 1804/26, de 20/10/2026.',
+          'Combinado em conversa com a Coberpool: a capa pode ter um recuo, um detalhe que contorna o guarda-corpo da escada e evita cortá-lo, sem perda significativa de carga térmica. Esse detalhe ainda não consta na proposta escrita.',
+          'Composição: eixo enrolador em aço inox 316L, motor redutor de 24 V com fim de curso, painel elétrico com chave de acionamento e controle remoto.',
+          'Incluso: projeto dos detalhes técnicos na alvenaria, 1 visita à obra antes da instalação para a medição final, apoio técnico por telefone, e-mail e fotos, transporte e instalação.',
+          'Não incluso: içamento, adequações de obra civil, elétrica e hidráulica, reconstruções, estrutura metálica ou deck de acabamento e tampa da caixa do motor.',
+          'Prazo de entrega: 35 dias úteis após a assinatura do contrato ou o pagamento da primeira parcela. Forma de pagamento: a combinar.',
+          'Garantia: 5 anos para a capa (contra amarelamento por raios UV e enrijecimento) e 1 ano para o sistema elétrico (motor e placa de comando).',
+          'Atenção da fabricante: não recomenda gerador de cloro (salinizador) na piscina, porque a salinidade alta pode causar pontos de oxidação no inox, mesmo no 316L. Ozônio e cloro dissolvido na água não prejudicam o equipamento.']},
+
+  {id:6, amb:'Piscina', nome:'Vazamento na cobertura da área gourmet', status:'sched',
+   quem:'HJC', quando:'17/11', iso:'2026-11-17', horario:null,
+   pessoas:'1 pessoa', duracao:'1 dia', valor:null, solic:'Rodrigo', extra:[],
+   notas:['O vazamento voltou a aparecer nas chuvas fortes. Possível entupimento dos ralos de água pluvial.','Histórico: MPA Calhas, prevista para 23/09 (R$ 1.100,00). Reagendado com a HJC.']},
+
+  {id:7, amb:'Elevadores', nome:'Manutenção preventiva do elevador principal e do monta-carga', status:'wait',
+   quem:'TNG', quando:'Visitas mensais, após fechar o contrato', iso:null, horario:null,
+   pessoas:'1 funcionário', duracao:'1 dia por visita', valor:'R$ 210,00 por mês', solic:'Manutenção', extra:[],
+   notas:['Os dois equipamentos são atendidos no mesmo dia. Atende às normas de utilização.','Contrato em negociação.']},
+
+  {id:8, amb:'Living', nome:'Revisão da porta automática', status:'sched',
+   quem:'Doormatic', quando:'20/11', iso:'2026-11-20', horario:null,
+   pessoas:'2 funcionários', duracao:'1 dia', valor:'R$ 11.570,00', solic:'Rodrigo',
+   extra:[['Aprovação','Aprovado em 28/09']],
+   notas:['A peça está prevista para chegar em 20/11, o mesmo dia da execução.']},
+
+  {id:9, amb:'Living', nome:'Emassamento e pintura do forro de gesso (remover trinca)', status:'warr',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:'Sem custo', solic:'Construtora',
+   extra:[['Garantia','Garantia da construtora']],
+   notas:['Execução feita pela Lammart.']},
+
+  {id:10, amb:'Hall', nome:'Porta blindada que não fecha corretamente', status:'wait',
+   quem:'Modelaço', quando:'Semana de 16/11', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:null, solic:'Rodrigo', extra:[],
+   notas:['Nova tentativa de reparo. A manutenção anterior teve mais dificuldade do que o previsto.','Hoje a porta precisa de ajuda para fechar.']},
+
+  {id:11, amb:'Sala de Almoço', nome:'Instalação de 2 luminárias', status:'budget',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:null, solic:'Construtora', extra:[],
+   notas:['Aguardando o orçamento da Lammart.']},
+
+  {id:12, amb:'Sala de Almoço', nome:'Emassamento e pintura do forro', status:'warr',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:'Sem custo', solic:'Construtora',
+   extra:[['Garantia','Garantia da construtora']], notas:[]},
+
+  {id:13, amb:'Suíte Miguel', nome:'Instalação de 2 luminárias', status:'budget',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:null, solic:'Geyze', extra:[],
+   notas:['Aguardando o orçamento da Lammart.']},
+
+  {id:14, amb:'Suíte Miguel', nome:'Emassamento e pintura do forro', status:'warr',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:'Sem custo', solic:'Construtora',
+   extra:[['Garantia','Garantia da construtora']], notas:[]},
+
+  {id:15, amb:'Suíte Rafa', nome:'Emassamento e pintura do forro de gesso do quarto (remover ondulação)', status:'warr',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:'Sem custo', solic:'Construtora',
+   extra:[['Garantia','Garantia da construtora']], notas:[]},
+
+  {id:16, amb:'Closet Rafa', nome:'Emassamento e pintura do forro de gesso do closet (remover ondulação)', status:'warr',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:'Sem custo', solic:'Construtora',
+   extra:[['Garantia','Garantia da construtora']], notas:[]},
+
+  {id:17, amb:'Suíte Rafa', nome:'Instalação de 4 luminárias', status:'budget',
+   quem:'Lammart', quando:'Início de janeiro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:null, solic:'Geyze', extra:[],
+   notas:['Aguardando o orçamento da Lammart.']},
+
+  {id:18, amb:'Geral', nome:'Manutenção preventiva de todas as portas e janelas manuais', status:'done',
+   quem:'Decorlustre', quando:'Executado em 30/09', iso:'2026-09-30', horario:null,
+   pessoas:'2 colaboradores', duracao:'1 dia', valor:null, solic:'Rodrigo',
+   extra:[['Garantia','Sem garantia']],
+   notas:['Vistoria feita pelo Fabio, da Decorlustre.','Foi uma tentativa de melhoria: as portas são muito pesadas e estão empenadas, por isso a empresa não dá garantia.']},
+
+  {id:19, amb:'Geral', nome:'Telefones: portaria, entre os quartos e extra na sala de TV', status:'budget',
+   quem:'Empresa de automação da casa', quando:'Final de novembro', iso:null, horario:null,
+   pessoas:null, duracao:null, valor:null, solic:'Rodrigo', extra:[],
+   notas:['A instalação será feita de uma vez: contato com a portaria, telefones entre os quartos e um telefone extra na sala de TV.']}
+];
+
+var APROV = {
+  20:'Aguardando sua aprovação', 1:'Aprovado em 28/09', 5:'Orçamento aprovado',
+  7:'Contrato em negociação', 8:'Aprovado em 28/09',
+  9:'Não precisa, é garantia', 12:'Não precisa, é garantia', 14:'Não precisa, é garantia',
+  15:'Não precisa, é garantia', 16:'Não precisa, é garantia',
+  11:'Aguardando orçamento', 13:'Aguardando orçamento', 17:'Aguardando orçamento', 19:'Aguardando orçamento'
+};
+var GARANTIA = {
+  5:'5 anos na capa e 1 ano no sistema elétrico',
+  20:'De 90 dias a 5 anos, conforme o componente',
+  9:'Garantia da construtora', 12:'Garantia da construtora', 14:'Garantia da construtora',
+  15:'Garantia da construtora', 16:'Garantia da construtora', 18:'Sem garantia', 6:'3 meses'
+};
+servicos.forEach(function(s){ s.aprov = APROV[s.id] || null; s.garantia = GARANTIA[s.id] || null; });
+
+var filtro = {status:'all', amb:'all', q:''};
+var MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function dataDe(iso){ var p = iso.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function hoje(){ var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function diasAte(iso){ return Math.round((dataDe(iso) - hoje()) / 86400000); }
+function fmtBR(iso){ var p = iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function relativo(n){
+  if(n === 0) return 'hoje';
+  if(n === 1) return 'amanhã';
+  if(n > 1) return 'em ' + n + ' dias';
+  if(n === -1) return 'ontem';
+  return 'há ' + Math.abs(n) + ' dias';
+}
+
+function valorOuTbd(v){
+  return v ? esc(v) : '<span class="tbd">a definir</span>';
+}
+
+function renderAgenda(){
+  var itens = servicos.filter(function(s){ return s.iso && s.status !== 'done' && passa(s); })
+    .sort(function(a,b){ return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0; });
+  var el = document.getElementById('agenda');
+  if(!itens.length){ el.innerHTML = '<div class="empty">Nenhum serviço com data marcada para este filtro.</div>'; return; }
+  el.innerHTML = itens.map(function(s){ return fichaServico(s, true); }).join('');
+}
+
+function renderResumo(){
+  var base = servicos.filter(passaSemStatus);
+  var cont = {};
+  ORDEM.forEach(function(k){ cont[k] = 0; });
+  base.forEach(function(s){ cont[s.status]++; });
+  if(filtro.status !== 'all' && !cont[filtro.status]) filtro.status = 'all';
+  var mostrados = servicos.filter(passa).length;
+  document.getElementById('total-txt').textContent =
+    'Mostrando ' + mostrados + ' de ' + servicos.length + ' serviços. Toque em uma situação para filtrar.';
+  document.getElementById('bar').innerHTML = ORDEM.filter(function(k){ return cont[k] > 0; }).map(function(k){
+    return '<span style="flex:' + cont[k] + ';background:' + STATUS[k].cor + '" title="' + STATUS[k].label + ': ' + cont[k] + '"></span>';
+  }).join('');
+  var chips = '<button class="chip" data-st="all" aria-pressed="' + (filtro.status === 'all') + '">Todos <em>' + base.length + '</em></button>';
+  ORDEM.forEach(function(k){
+    if(!cont[k]) return;
+    chips += '<button class="chip" data-st="' + k + '" aria-pressed="' + (filtro.status === k) + '"><i style="background:' + STATUS[k].cor + '"></i>' + STATUS[k].label + ' <em>' + cont[k] + '</em></button>';
+  });
+  document.getElementById('chips').innerHTML = chips;
+}
+
+function montarAmbientes(){
+  var vistos = [];
+  servicos.forEach(function(s){ if(vistos.indexOf(s.amb) < 0) vistos.push(s.amb); });
+  var sel = document.getElementById('amb');
+  sel.innerHTML = '<option value="all">Todos os ambientes</option>' + vistos.map(function(a){
+    return '<option value="' + esc(a) + '">' + esc(a) + '</option>';
+  }).join('');
+}
+
+function passaSemStatus(s){
+  if(filtro.amb !== 'all' && s.amb !== filtro.amb) return false;
+  if(filtro.q){
+    var alvo = (s.nome + ' ' + s.amb + ' ' + (s.quem||'') + ' ' + (s.solic||'')).toLowerCase();
+    if(alvo.indexOf(filtro.q.toLowerCase()) < 0) return false;
+  }
+  return true;
+}
+function passa(s){
+  if(filtro.status !== 'all' && s.status !== filtro.status) return false;
+  return passaSemStatus(s);
+}
+
+var MESES_LONGOS = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function fichaServico(s, comData){
+  var st = STATUS[s.status];
+  var passou = s.iso && s.status !== 'done' && diasAte(s.iso) < 0;
+  var quando = s.quando
+    ? esc(s.quando) + (s.horario ? ', ' + esc(s.horario) : '') + (passou ? ' (a data já passou, em confirmação)' : '')
+    : '<span class="tbd">a definir</span>';
+  var cab = '';
+  if(comData && s.iso){
+    var d = dataDe(s.iso), n = diasAte(s.iso);
+    cab = '<div class="when">' + d.getDate() + ' de ' + MESES_LONGOS[d.getMonth()] +
+          '<span>' + (s.tipo === 'prazo' ? 'prazo máximo, ' : '') + relativo(n) + '</span></div>';
+  }
+  var campos = [
+    ['Quem vai', valorOuTbd(s.quem)],
+    ['Quando', quando],
+    ['Quantas pessoas', valorOuTbd(s.pessoas)],
+    ['Quanto tempo', valorOuTbd(s.duracao)],
+    ['Valor', valorOuTbd(s.valor)],
+    ['Aprovação', valorOuTbd(s.aprov)],
+    ['Garantia', valorOuTbd(s.garantia)],
+    ['Pedido por', valorOuTbd(s.solic)]
+  ];
+  var facts = campos.map(function(c){ return '<div><dt>' + c[0] + '</dt><dd>' + c[1] + '</dd></div>'; }).join('');
+  var notas = s.notas.length
+    ? s.notas.map(function(n){ return '<p>' + esc(n) + '</p>'; }).join('')
+    : '<p>Sem observações no momento.</p>';
+  return '<article class="svc" style="--c:' + st.cor + '">' + cab +
+    '<div class="amb">' + esc(s.amb) + '</div>' +
+    '<div class="svc-head"><h4>' + esc(s.nome) + '</h4><span class="tag">' + st.label + '</span></div>' +
+    '<dl class="facts">' + facts + '</dl>' +
+    '<div class="obs"><div class="obs-t">Observação</div>' + notas + '</div></article>';
+}
+
+function renderLista(){
+  var visiveis = servicos.filter(passa);
+  var el = document.getElementById('lista');
+  if(!visiveis.length){
+    el.innerHTML = '<div class="empty">Nenhum serviço encontrado com esse filtro. Toque em "Todos" para ver a lista completa.</div>';
+    return;
+  }
+  var ordem = [];
+  visiveis.forEach(function(s){ if(ordem.indexOf(s.amb) < 0) ordem.push(s.amb); });
+  el.innerHTML = ordem.map(function(a){
+    var itens = visiveis.filter(function(s){ return s.amb === a; });
+    return '<div class="room"><h3>' + esc(a) + '<small>' + itens.length + (itens.length === 1 ? ' serviço' : ' serviços') + '</small></h3>' +
+      itens.map(function(s){ return fichaServico(s, false); }).join('') + '</div>';
+  }).join('');
+}
+
+var G_INI = '2026-11-01', G_FIM = '2027-01-31';
+var G_MESES = [['2026-11-01','Novembro','2026'],['2026-12-01','Dezembro',''],['2027-01-01','Janeiro','2027']];
+var G_MANUAL = {
+  4:  {ini:'2026-11-01', fim:'2026-11-30', q:'Novembro'},
+  5:  {ini:'2026-11-23', fim:'2026-12-31', q:'Final de novembro a dezembro'},
+  10: {ini:'2026-11-16', fim:'2026-11-20', q:'Semana de 16/11'},
+  19: {ini:'2026-11-23', fim:'2026-11-30', q:'Final de novembro'}
+};
+
+function toIso(d){ return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
+function gTotalDias(){ return Math.round((dataDe(G_FIM) - dataDe(G_INI)) / 86400000) + 1; }
+function gPos(iso){ return Math.round((dataDe(iso) - dataDe(G_INI)) / 86400000) / gTotalDias() * 100; }
+function gPosFim(iso){ return (Math.round((dataDe(iso) - dataDe(G_INI)) / 86400000) + 1) / gTotalDias() * 100; }
+function ddmm(iso){ return fmtBR(iso).slice(0,5); }
+
+function ganttInfo(s){
+  var m = G_MANUAL[s.id];
+  if(m) return {ini:m.ini, fim:m.fim, q:m.q, tipo:'mes'};
+  if(s.quando === 'Início de janeiro') return {ini:'2027-01-01', fim:'2027-01-10', q:'Início de janeiro', tipo:'mes'};
+  if(s.iso && s.tipo === 'prazo') return {ini:ATUALIZADO, fim:s.iso, q:'Até ' + ddmm(s.iso), tipo:'janela'};
+  if(s.iso && s.status === 'done') return {ini:s.iso, fim:s.iso, q:'Feito em ' + ddmm(s.iso), tipo:'dia'};
+  if(s.iso) return {ini:s.iso, fim:s.iso, q:ddmm(s.iso), tipo:'dia'};
+  return null;
+}
+
+function renderGantt(){
+  var base = servicos.filter(passaSemStatus);
+  var linhas = [], anteriores = [], semData = [];
+  base.forEach(function(s){
+    var g = ganttInfo(s);
+    if(!g) semData.push(s);
+    else if(g.fim < G_INI) anteriores.push({s:s, g:g});
+    else linhas.push({s:s, g:g});
+  });
+  linhas.sort(function(a,b){ return a.g.ini < b.g.ini ? -1 : a.g.ini > b.g.ini ? 1 : a.s.id - b.s.id; });
+
+  document.getElementById('g-count').textContent =
+    'Mostrando ' + base.length + ' de ' + servicos.length + ' serviços, do que vem primeiro ao que vem depois.';
+
+  var usados = {};
+  linhas.forEach(function(x){ usados[x.s.status] = true; });
+  var leg = ORDEM.filter(function(k){ return usados[k]; }).map(function(k){
+    return '<span style="--c:' + STATUS[k].cor + '"><i></i>' + STATUS[k].label + '</span>';
+  }).join('');
+  if(linhas.some(function(x){ return x.g.tipo !== 'dia'; })) leg += '<span style="--c:#5d6b82"><i class="tr"></i>Período previsto, o dia exato ainda não</span>';
+  leg += '<span><i class="hj"></i>Hoje</span>';
+  document.getElementById('g-leg').innerHTML = leg;
+
+  var segundas = [];
+  var d = dataDe(G_INI), fimD = dataDe(G_FIM);
+  while(d <= fimD){ if(d.getDay() === 1) segundas.push(toIso(d)); d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1); }
+
+  var cab = '<div class="g-mes-row">' + G_MESES.map(function(m, i){
+    var ini = gPos(m[0]), fim = i < G_MESES.length - 1 ? gPos(G_MESES[i+1][0]) : 100;
+    return '<div class="g-mes" style="width:' + (fim - ini) + '%">' + m[1] + (m[2] ? '<small>' + m[2] + '</small>' : '') + '</div>';
+  }).join('') + '</div>' +
+  '<div class="g-wk" aria-hidden="true">' + segundas.map(function(iso){
+    return '<span style="left:' + gPos(iso) + '%">' + dataDe(iso).getDate() + '</span>';
+  }).join('') + '</div>';
+
+  var grade = '';
+  G_MESES.forEach(function(m, i){
+    if(i % 2 === 1){
+      var ini = gPos(m[0]), fim = i < G_MESES.length - 1 ? gPos(G_MESES[i+1][0]) : 100;
+      grade += '<span class="f" style="left:' + ini + '%;width:' + (fim - ini) + '%"></span>';
+    }
+  });
+  segundas.forEach(function(iso){ grade += '<span class="w" style="left:' + gPos(iso) + '%"></span>'; });
+  G_MESES.slice(1).forEach(function(m){ grade += '<span class="m" style="left:' + gPos(m[0]) + '%"></span>'; });
+  var hj = toIso(hoje());
+  if(hj >= G_INI && hj <= G_FIM) grade += '<span class="h" style="left:' + (gPos(hj) + 0.5 / gTotalDias() * 100) + '%"></span>';
+
+  var corpo = linhas.map(function(x){
+    var s = x.s, g = x.g, cor = STATUS[s.status].cor;
+    var ini = gPos(g.ini), fim = gPosFim(g.fim), centro = (ini + fim) / 2;
+    var cls = g.tipo === 'dia' ? 'g-bar dia' : 'g-bar' + (g.tipo === 'mes' ? ' mes' : '');
+    var estilo = g.tipo === 'dia' ? 'left:' + centro + '%' : 'left:' + ini + '%;width:' + (fim - ini) + '%';
+    var sub = '<b class="g-q">' + esc(g.q) + '</b>' + esc(s.amb + (s.quem ? ', ' + s.quem : ''));
+    return '<div class="g-row" style="--c:' + cor + '">' +
+      '<span class="g-title">' + esc(s.nome) + '</span><span class="g-sub">' + sub + '</span>' +
+      '<div class="g-track">' + grade + '<div class="' + cls + '" style="' + estilo + '" title="' + esc(STATUS[s.status].label) + '"></div></div></div>';
+  }).join('');
+
+  document.getElementById('gantt').innerHTML = cab + corpo;
+
+  var extra = '';
+  if(anteriores.length){
+    extra += '<h3>Já concluído</h3>' + anteriores.map(function(x){
+      return '<div class="g-sem-row"><div><span class="g-title">' + esc(x.s.nome) + '</span><span class="g-sub">' + esc(x.s.amb + (x.s.quem ? ', ' + x.s.quem : '')) + '</span></div>' +
+        '<span class="pill ok">' + esc(x.g.q.toLowerCase()) + '</span></div>';
+    }).join('');
+  }
+  if(semData.length){
+    extra += '<h3 style="margin-top:22px">Ainda sem previsão</h3>' +
+      '<p class="sub" style="margin-top:8px">Assim que houver uma previsão, esses serviços entram no cronograma.</p>' +
+      semData.map(function(s){
+        return '<div class="g-sem-row"><div><span class="g-title">' + esc(s.nome) + '</span><span class="g-sub">' + esc(s.amb + (s.quem ? ', ' + s.quem : '')) + '</span></div>' +
+          '<span class="pill">a definir</span></div>';
+      }).join('');
+  }
+  document.getElementById('g-sem').innerHTML = extra;
+}
+
+function abrirAba(nome){
+  ['servicos','gantt'].forEach(function(n){
+    var ativo = (n === nome);
+    document.getElementById('p-' + n).hidden = !ativo;
+    document.getElementById('t-' + n).setAttribute('aria-selected', ativo ? 'true' : 'false');
+  });
+  if(nome === 'gantt') renderGantt();
+}
+document.getElementById('t-servicos').addEventListener('click', function(){ abrirAba('servicos'); });
+document.getElementById('t-gantt').addEventListener('click', function(){ abrirAba('gantt'); });
+
+function atualizarTudo(){ renderResumo(); renderAgenda(); renderLista(); renderGantt(); }
+
+document.getElementById('chips').addEventListener('click', function(e){
+  var b = e.target.closest('button');
+  if(!b) return;
+  filtro.status = (filtro.status === b.getAttribute('data-st')) ? 'all' : b.getAttribute('data-st');
+  atualizarTudo();
+});
+document.getElementById('busca').addEventListener('input', function(e){ filtro.q = e.target.value.trim(); atualizarTudo(); });
+document.getElementById('amb').addEventListener('change', function(e){ filtro.amb = e.target.value; atualizarTudo(); });
+
+document.getElementById('atualizado').textContent = 'Atualizado em ' + fmtBR(ATUALIZADO);
+montarAmbientes();
+atualizarTudo();
+</script>
+</body>
+</html>
